@@ -1,1 +1,481 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#808080" id="themeColor" />
+  <title>RGB 빛의 삼원색 조절기</title>
 
+  <style>
+    :root {
+      --current-color: rgb(128, 128, 128);
+      --on-current-color: #ffffff;
+      --bg: #f5f6fb;
+      --card: #ffffff;
+      --text: #141827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      min-height: 100svh;
+      padding: 24px;
+      padding-left: max(24px, env(safe-area-inset-left));
+      padding-right: max(24px, env(safe-area-inset-right));
+    }
+
+    body.color-mode {
+      overflow: hidden;
+    }
+
+    .app {
+      width: min(920px, 100%);
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.7rem, 5vw, 2.6rem);
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+    }
+
+    .description {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(0.98rem, 2.8vw, 1.1rem);
+      line-height: 1.6;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: clamp(18px, 4vw, 32px);
+      box-shadow: var(--shadow);
+    }
+
+    .preview {
+      width: 100%;
+      min-height: min(46svh, 360px);
+      border-radius: 24px;
+      background: var(--current-color);
+      display: grid;
+      place-items: center;
+      transition: background-color 0.12s linear;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .preview-label {
+      color: var(--on-current-color);
+      text-align: center;
+      padding: 18px 22px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .preview-label strong {
+      display: block;
+      font-size: clamp(1.4rem, 5vw, 2.5rem);
+      letter-spacing: -0.03em;
+    }
+
+    .preview-label span {
+      display: block;
+      margin-top: 8px;
+      font-size: clamp(1rem, 3.5vw, 1.3rem);
+      opacity: 0.92;
+    }
+
+    .controls {
+      display: grid;
+      gap: 24px;
+      margin-top: 28px;
+    }
+
+    .slider-group {
+      display: grid;
+      gap: 18px;
+    }
+
+    .slider-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .slider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      font-weight: 800;
+      font-size: clamp(1.05rem, 3vw, 1.2rem);
+    }
+
+    .channel {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      display: inline-block;
+      border: 2px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .dot.red {
+      background: rgb(255, 0, 0);
+    }
+
+    .dot.green {
+      background: rgb(0, 200, 0);
+    }
+
+    .dot.blue {
+      background: rgb(0, 90, 255);
+    }
+
+    output {
+      min-width: 56px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 18px;
+      border-radius: 999px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      touch-action: pan-y;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 4px solid #111827;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 4px solid #111827;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    }
+
+    .button-area {
+      display: grid;
+      gap: 12px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 18px;
+      padding: 18px 20px;
+      font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+      font-weight: 900;
+      color: #ffffff;
+      background: #111827;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(17, 24, 39, 0.24);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    #colorScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      width: 100vw;
+      height: 100dvh;
+      background: var(--current-color);
+      display: block;
+      cursor: none;
+      touch-action: none;
+    }
+
+    #colorScreen[hidden] {
+      display: none;
+    }
+
+    #colorScreen:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      background: var(--current-color);
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 16px;
+      }
+
+      .card {
+        border-radius: 22px;
+      }
+
+      .preview {
+        border-radius: 20px;
+        min-height: 36svh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <h1>RGB 빛의 삼원색 조절기</h1>
+      <p class="description">
+        빨강(R), 초록(G), 파랑(B)의 값을 0부터 255까지 조절하여 빛의 합성 색을 확인합니다.
+      </p>
+    </header>
+
+    <section class="card" aria-label="RGB 색상 조절 영역">
+      <div class="preview" id="preview" aria-label="현재 RGB 색상 미리보기">
+        <div class="preview-label">
+          <strong id="rgbText">rgb(128, 128, 128)</strong>
+          <span id="hexText">#808080</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="slider-group">
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="red">
+                <span class="channel"><span class="dot red"></span>R 빨강</span>
+              </label>
+              <output id="redValue" for="red">128</output>
+            </div>
+            <input id="red" type="range" min="0" max="255" value="128" />
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="green">
+                <span class="channel"><span class="dot green"></span>G 초록</span>
+              </label>
+              <output id="greenValue" for="green">128</output>
+            </div>
+            <input id="green" type="range" min="0" max="255" value="128" />
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="blue">
+                <span class="channel"><span class="dot blue"></span>B 파랑</span>
+              </label>
+              <output id="blueValue" for="blue">128</output>
+            </div>
+            <input id="blue" type="range" min="0" max="255" value="128" />
+          </div>
+        </div>
+
+        <div class="button-area">
+          <button id="fullscreenButton" type="button">현재 색 전체화면으로 보기</button>
+          <p class="hint">
+            전체화면에서는 색만 표시됩니다. 스마트폰·태블릿의 뒤로가기를 누르면 기본 화면으로 돌아옵니다.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="colorScreen" hidden aria-hidden="true"></div>
+
+  <script>
+    const red = document.getElementById("red");
+    const green = document.getElementById("green");
+    const blue = document.getElementById("blue");
+
+    const redValue = document.getElementById("redValue");
+    const greenValue = document.getElementById("greenValue");
+    const blueValue = document.getElementById("blueValue");
+
+    const preview = document.getElementById("preview");
+    const rgbText = document.getElementById("rgbText");
+    const hexText = document.getElementById("hexText");
+    const themeColor = document.getElementById("themeColor");
+
+    const fullscreenButton = document.getElementById("fullscreenButton");
+    const colorScreen = document.getElementById("colorScreen");
+
+    let isColorMode = false;
+    let pushedHistoryState = false;
+
+    function toHex(value) {
+      return Number(value).toString(16).padStart(2, "0").toUpperCase();
+    }
+
+    function rgbToHex(r, g, b) {
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    function getReadableTextColor(r, g, b) {
+      // 사람 눈의 밝기 인식에 맞춘 상대 휘도 계산
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.58 ? "#111827" : "#FFFFFF";
+    }
+
+    function updateSliderBackgrounds(r, g, b) {
+      red.style.background = `linear-gradient(to right, rgb(0, ${g}, ${b}), rgb(255, ${g}, ${b}))`;
+      green.style.background = `linear-gradient(to right, rgb(${r}, 0, ${b}), rgb(${r}, 255, ${b}))`;
+      blue.style.background = `linear-gradient(to right, rgb(${r}, ${g}, 0), rgb(${r}, ${g}, 255))`;
+    }
+
+    function updateColor() {
+      const r = Number(red.value);
+      const g = Number(green.value);
+      const b = Number(blue.value);
+
+      const rgb = `rgb(${r}, ${g}, ${b})`;
+      const hex = rgbToHex(r, g, b);
+      const readableText = getReadableTextColor(r, g, b);
+
+      document.documentElement.style.setProperty("--current-color", rgb);
+      document.documentElement.style.setProperty("--on-current-color", readableText);
+
+      preview.style.backgroundColor = rgb;
+      colorScreen.style.backgroundColor = rgb;
+
+      redValue.textContent = r;
+      greenValue.textContent = g;
+      blueValue.textContent = b;
+
+      rgbText.textContent = rgb;
+      hexText.textContent = hex;
+      themeColor.setAttribute("content", hex);
+
+      updateSliderBackgrounds(r, g, b);
+    }
+
+    async function enterColorMode() {
+      updateColor();
+
+      isColorMode = true;
+      document.body.classList.add("color-mode");
+      colorScreen.hidden = false;
+      colorScreen.setAttribute("aria-hidden", "false");
+
+      // 뒤로가기 버튼으로 전체화면을 해제하기 위한 임시 기록 추가
+      history.pushState({ rgbColorMode: true }, "", "#color");
+      pushedHistoryState = true;
+
+      // 지원되는 브라우저에서는 실제 전체화면 모드 사용
+      // 지원되지 않거나 실패해도 colorScreen이 화면 전체를 덮으므로 수업에는 사용 가능
+      try {
+        if (colorScreen.requestFullscreen) {
+          await colorScreen.requestFullscreen();
+        }
+      } catch (error) {
+        // 일부 모바일 브라우저에서는 Fullscreen API가 제한될 수 있음.
+        // 이 경우에도 CSS 전체 화면 덮개 방식으로 계속 작동.
+      }
+    }
+
+    async function exitColorMode(options = {}) {
+      const { fromPopState = false } = options;
+
+      if (!isColorMode) return;
+
+      isColorMode = false;
+      document.body.classList.remove("color-mode");
+      colorScreen.hidden = true;
+      colorScreen.setAttribute("aria-hidden", "true");
+
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      } catch (error) {
+        // 이미 전체화면이 해제된 경우 무시
+      }
+
+      // ESC 등으로 전체화면을 빠져나간 경우 URL의 #color 상태도 정리
+      if (!fromPopState && pushedHistoryState) {
+        pushedHistoryState = false;
+        history.back();
+      }
+
+      if (fromPopState) {
+        pushedHistoryState = false;
+      }
+    }
+
+    red.addEventListener("input", updateColor);
+    green.addEventListener("input", updateColor);
+    blue.addEventListener("input", updateColor);
+
+    fullscreenButton.addEventListener("click", enterColorMode);
+
+    // 스마트폰/태블릿 뒤로가기 처리
+    window.addEventListener("popstate", () => {
+      if (isColorMode) {
+        exitColorMode({ fromPopState: true });
+      }
+    });
+
+    // PC에서 ESC 등으로 전체화면을 나갔을 때 기본 화면 복귀
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement && isColorMode) {
+        exitColorMode();
+      }
+    });
+
+    // PC 키보드 보조 처리
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && isColorMode) {
+        exitColorMode();
+      }
+    });
+
+    updateColor();
+  </script>
+</body>
+</html>
