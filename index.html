@@ -3,11 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <!-- 스마트폰이 다크모드여도 이 웹앱은 라이트 모드 기준으로 표시 -->
+  <meta name="color-scheme" content="light only" />
+
   <meta name="theme-color" content="#808080" id="themeColor" />
   <title>RGB 빛의 삼원색 조절기</title>
 
   <style>
     :root {
+      color-scheme: light;
+
       --current-color: rgb(128, 128, 128);
       --on-current-color: #ffffff;
       --bg: #f5f6fb;
@@ -29,6 +35,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--text);
+      color-scheme: light;
     }
 
     body {
@@ -45,6 +52,7 @@
     .app {
       width: min(920px, 100%);
       margin: 0 auto;
+      color-scheme: light;
     }
 
     header {
@@ -71,6 +79,7 @@
       border-radius: 28px;
       padding: clamp(18px, 4vw, 32px);
       box-shadow: var(--shadow);
+      color-scheme: light;
     }
 
     .preview {
@@ -83,6 +92,7 @@
       transition: background-color 0.12s linear;
       border: 1px solid rgba(0, 0, 0, 0.08);
       overflow: hidden;
+      forced-color-adjust: none;
     }
 
     .preview-label {
@@ -93,6 +103,7 @@
       background: rgba(0, 0, 0, 0.22);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
+      color-scheme: light;
     }
 
     .preview-label strong {
@@ -164,6 +175,7 @@
       text-align: right;
       font-variant-numeric: tabular-nums;
       color: var(--muted);
+      color-scheme: light;
     }
 
     input[type="range"] {
@@ -175,7 +187,9 @@
       -webkit-appearance: none;
       cursor: pointer;
       touch-action: pan-y;
-      border: 1px solid rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      forced-color-adjust: none;
+      color-scheme: light;
     }
 
     input[type="range"]::-webkit-slider-thumb {
@@ -214,6 +228,7 @@
       background: #111827;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba(17, 24, 39, 0.24);
+      color-scheme: light;
     }
 
     button:active {
@@ -238,6 +253,8 @@
       display: block;
       cursor: none;
       touch-action: none;
+      forced-color-adjust: none;
+      color-scheme: light;
     }
 
     #colorScreen[hidden] {
@@ -358,15 +375,29 @@
     }
 
     function getReadableTextColor(r, g, b) {
-      // 사람 눈의 밝기 인식에 맞춘 상대 휘도 계산
       const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
       return luminance > 0.58 ? "#111827" : "#FFFFFF";
     }
 
-    function updateSliderBackgrounds(r, g, b) {
-      red.style.background = `linear-gradient(to right, rgb(0, ${g}, ${b}), rgb(255, ${g}, ${b}))`;
-      green.style.background = `linear-gradient(to right, rgb(${r}, 0, ${b}), rgb(${r}, 255, ${b}))`;
-      blue.style.background = `linear-gradient(to right, rgb(${r}, ${g}, 0), rgb(${r}, ${g}, 255))`;
+    /*
+      RGB 막대바 색상 수정 부분
+
+      기존 방식:
+      - R 막대 색상이 G, B 값의 영향을 받음
+      - G 막대 색상이 R, B 값의 영향을 받음
+      - B 막대 색상이 R, G 값의 영향을 받음
+
+      수정 방식:
+      - R 막대는 항상 검정 → 빨강
+      - G 막대는 항상 검정 → 초록
+      - B 막대는 항상 검정 → 파랑
+
+      따라서 학생들이 각 막대의 의미를 더 쉽게 이해할 수 있음
+    */
+    function updateSliderBackgrounds() {
+      red.style.background = "linear-gradient(to right, rgb(0, 0, 0), rgb(255, 0, 0))";
+      green.style.background = "linear-gradient(to right, rgb(0, 0, 0), rgb(0, 255, 0))";
+      blue.style.background = "linear-gradient(to right, rgb(0, 0, 0), rgb(0, 0, 255))";
     }
 
     function updateColor() {
@@ -392,7 +423,7 @@
       hexText.textContent = hex;
       themeColor.setAttribute("content", hex);
 
-      updateSliderBackgrounds(r, g, b);
+      updateSliderBackgrounds();
     }
 
     async function enterColorMode() {
@@ -403,19 +434,18 @@
       colorScreen.hidden = false;
       colorScreen.setAttribute("aria-hidden", "false");
 
-      // 뒤로가기 버튼으로 전체화면을 해제하기 위한 임시 기록 추가
       history.pushState({ rgbColorMode: true }, "", "#color");
       pushedHistoryState = true;
 
-      // 지원되는 브라우저에서는 실제 전체화면 모드 사용
-      // 지원되지 않거나 실패해도 colorScreen이 화면 전체를 덮으므로 수업에는 사용 가능
       try {
         if (colorScreen.requestFullscreen) {
           await colorScreen.requestFullscreen();
         }
       } catch (error) {
-        // 일부 모바일 브라우저에서는 Fullscreen API가 제한될 수 있음.
-        // 이 경우에도 CSS 전체 화면 덮개 방식으로 계속 작동.
+        /*
+          일부 모바일 브라우저에서는 전체화면 API가 제한될 수 있음.
+          이 경우에도 colorScreen이 화면 전체를 덮기 때문에 수업에는 사용 가능.
+        */
       }
     }
 
@@ -434,10 +464,11 @@
           await document.exitFullscreen();
         }
       } catch (error) {
-        // 이미 전체화면이 해제된 경우 무시
+        /*
+          이미 전체화면이 해제된 경우 무시
+        */
       }
 
-      // ESC 등으로 전체화면을 빠져나간 경우 URL의 #color 상태도 정리
       if (!fromPopState && pushedHistoryState) {
         pushedHistoryState = false;
         history.back();
@@ -454,21 +485,18 @@
 
     fullscreenButton.addEventListener("click", enterColorMode);
 
-    // 스마트폰/태블릿 뒤로가기 처리
     window.addEventListener("popstate", () => {
       if (isColorMode) {
         exitColorMode({ fromPopState: true });
       }
     });
 
-    // PC에서 ESC 등으로 전체화면을 나갔을 때 기본 화면 복귀
     document.addEventListener("fullscreenchange", () => {
       if (!document.fullscreenElement && isColorMode) {
         exitColorMode();
       }
     });
 
-    // PC 키보드 보조 처리
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && isColorMode) {
         exitColorMode();
